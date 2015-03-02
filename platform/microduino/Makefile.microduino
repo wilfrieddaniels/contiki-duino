@@ -1,0 +1,24 @@
+# Only required when these subdirs exist in platform directory
+#CONTIKI_TARGET_DIRS = . apps net loader
+
+CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
+# Needed for slip
+#CONTIKI_TARGET_SOURCEFILES += slip_uart.c
+
+# Extra compiler flags. F_CPU defines not really necessary.
+CONTIKI_PLAT_DEFS = -DF_CPU=16000000UL -DAUTO_CRC_PADDING=2
+
+MCU=atmega644pa
+
+# Avrdude settings
+AVRDUDE_PROGRAMMER=jtag3isp
+AVRDUDE_MCU=m644p
+AVRDUDE_OPTIONS=-B 1
+
+# Include avr cpu + radio makefiles
+CONTIKIAVR=$(CONTIKI)/cpu/avr
+include $(CONTIKIAVR)/Makefile.avr
+#include $(CONTIKIAVR)/radio/Makefile.radio
+
+# Extra contiki libraries to include
+MODULES += core/net/mac core/net core/net/mac/sicslowmac core/net/mac/contikimac core/net/llsec
