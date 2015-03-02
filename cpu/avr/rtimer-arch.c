@@ -70,7 +70,7 @@
 #define TICIE3 ICIE3
 #endif
 
-#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega644__)
+#if defined(__AVR_ATmega328P__) || defined(__AVR_ATmega644__) || defined(__AVR_ATmega644PA__)
 #define TIMSK TIMSK1
 #define TICIE1 ICIE1
 #define TIFR TIFR1

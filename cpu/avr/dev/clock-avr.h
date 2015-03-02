@@ -190,7 +190,7 @@
   TIMSK0 = _BV (OCIE0A);
 #endif /* AVR_CONF_USE32KCRYSTAL */
 
-#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega328P__)
+#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega644PA__)
 
 #define OCRSetup() \
   /* Set counter to zero */   \

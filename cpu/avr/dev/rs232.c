@@ -192,7 +192,7 @@
 #define D_USART0_TX_vect USART_TXC_vect
 #endif
 
-#elif defined (__AVR_ATmega644__)
+#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega644PA__)
 #ifndef NUMPORTS
 #define NUMPORTS 1
 #elif NUMPORTS > 1
