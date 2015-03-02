@@ -98,9 +98,9 @@ uint8_t debugflowsize,debugflow[DEBUGFLOWSIZE];
 /* Get periodic prints from idle loop, from clock seconds or rtimer interrupts */
 /* Use of rtimer will conflict with other rtimer interrupts such as contikimac radio cycling */
 /* STAMPS will print ENERGEST outputs if that is enabled. */
-#define PERIODICPRINTS 0
+#define PERIODICPRINTS 1
 #if PERIODICPRINTS
-#define ROUTES 600
+#define ROUTES 0
 #define STAMPS 60
 #define STACKMONITOR 1024
 uint32_t clocktime;
