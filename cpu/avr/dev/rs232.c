@@ -83,7 +83,7 @@
 #define NUMPORTS RS232_CONF_NUMPORTS
 #endif
 
-#if defined (__AVR_ATmega128__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega1281__) || defined(__AVR_ATmega128RFA1__)
+#if defined (__AVR_ATmega128__) || defined(__AVR_ATmega1284P__) || defined(__AVR_ATmega1281__) || defined(__AVR_ATmega128RFA1__) || defined (__AVR_ATmega644PA__)
 #ifndef NUMPORTS
 #define NUMPORTS 2
 #elif NUMPORTS > 2
@@ -192,7 +192,7 @@
 #define D_USART0_TX_vect USART_TXC_vect
 #endif
 
-#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega644PA__)
+#elif defined (__AVR_ATmega644__)
 #ifndef NUMPORTS
 #define NUMPORTS 1
 #elif NUMPORTS > 1

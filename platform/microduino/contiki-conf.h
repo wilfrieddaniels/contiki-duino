@@ -33,7 +33,7 @@
 
 /**
  * \file
- *         Configuration for Zigduino based on Atmega128rfa1
+ *         Configuration for Microduino based on Atmega644PA - 16 Mhz ext clock
  * \author
  *         Wilfried Daniels <wilfried.daniels@cs.kuleuven.be>
  */
@@ -43,7 +43,7 @@
 
 /* Platform name, type, and MCU clock rate */
 #define PLATFORM_NAME  "Microduino"
-#define PLATFORM_TYPE  ATMEGA128RFA1
+#define PLATFORM_TYPE  ATMEGA128RFA1 //Not correct, change later
 #ifndef F_CPU
 #define F_CPU          16000000UL
 #endif
@@ -57,7 +57,7 @@
 
 /* Clock ticks per second. This will automatically set up timer
  * prescalers/treshold values to give this amount of ticks per second */
-#define CLOCK_CONF_SECOND 256
+#define CLOCK_CONF_SECOND 128
 
 /* Declare contiki timer size. A short gives ~10 min before overflow. Change if
  * necessary*/

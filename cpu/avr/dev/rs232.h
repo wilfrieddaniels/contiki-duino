@@ -43,13 +43,13 @@
 #include "dev/rs232_atmega128.h"
 #elif defined (__AVR_ATmega1281__)
 #include "dev/rs232_atmega1281.h"
-#elif defined (__AVR_ATmega1284P__)
+#elif defined (__AVR_ATmega1284P__) || defined (__AVR_ATmega644PA__)
 #include "dev/rs232_atmega1284.h"
 #elif defined (__AVR_AT90USB1287__)
 #include "dev/rs232_at90usb1287.h"
 #elif defined (__AVR_ATmega128RFA1__)
 #include "dev/rs232_atmega128rfa1.h"
-#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega328P__) || defined (__AVR_ATmega644PA__)
+#elif defined (__AVR_ATmega644__) || defined (__AVR_ATmega328P__)
 #include "dev/rs232_atmega644.h"
 #elif defined (__AVR_ATmega8__) || defined (__AVR_ATmega8515__) \
    || defined (__AVR_ATmega16__) || defined (__AVR_ATmega32__)
