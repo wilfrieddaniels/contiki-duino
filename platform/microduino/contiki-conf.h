@@ -86,7 +86,7 @@ void clock_adjust_ticks(clock_time_t howmany);
 
 /* Pre-allocated memory for MMEM (in bytes) */
 /* Default is 4096. */
-//#define MMEM_CONF_SIZE 256
+#define MMEM_CONF_SIZE 256
 
 typedef unsigned long off_t;
 /* Starting address for code received via the codeprop app. Not tested. */
