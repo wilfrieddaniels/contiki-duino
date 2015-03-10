@@ -100,7 +100,7 @@ uint8_t debugflowsize,debugflow[DEBUGFLOWSIZE];
 /* STAMPS will print ENERGEST outputs if that is enabled. */
 #define PERIODICPRINTS 1
 #if PERIODICPRINTS
-#define ROUTES 60
+#define ROUTES 600
 #define STAMPS 60
 #define STACKMONITOR 1024
 uint32_t clocktime;
@@ -244,7 +244,8 @@ uint8_t i;
   /* Set addresses BEFORE starting tcpip process */
 
   linkaddr_t addr;
-
+  // Checks eeprom integrity, although we do not use a channel
+  params_get_channel();
   if (params_get_eui64(addr.u8)) {
       PRINTA("Random EUI64 address generated\n");
   }
