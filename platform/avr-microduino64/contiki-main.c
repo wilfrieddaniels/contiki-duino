@@ -163,6 +163,8 @@ rng_get_uint8(void) {
 /*------Done in a subroutine to keep main routine stack usage small--------*/
 void initialize(void)
 {
+  uint8_t mcusr_backup = MCUSR;
+  MCUSR = 0;
   watchdog_init();
   watchdog_start();
 
@@ -177,12 +179,11 @@ void initialize(void)
   clock_init();
 
   // Print reboot reason
-  if(MCUSR & (1<<PORF )) PRINTD("Power-on reset.\n");
-  if(MCUSR & (1<<EXTRF)) PRINTD("External reset!\n");
-  if(MCUSR & (1<<BORF )) PRINTD("Brownout reset!\n");
-  if(MCUSR & (1<<WDRF )) PRINTD("Watchdog reset!\n");
-  if(MCUSR & (1<<JTRF )) PRINTD("JTAG reset!\n");
-  MCUSR = 0;
+  if(mcusr_backup & (1<<PORF )) PRINTD("Power-on reset.\n");
+  if(mcusr_backup & (1<<EXTRF)) PRINTD("External reset!\n");
+  if(mcusr_backup & (1<<BORF )) PRINTD("Brownout reset!\n");
+  if(mcusr_backup & (1<<WDRF )) PRINTD("Watchdog reset!\n");
+  if(mcusr_backup & (1<<JTRF )) PRINTD("JTAG reset!\n");
 
 #if STACKMONITOR
   /* Simple stack pointer highwater monitor. Checks for magic numbers in the main
