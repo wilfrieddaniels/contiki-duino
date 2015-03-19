@@ -7,8 +7,12 @@ CONTIKI_TARGET_SOURCEFILES += slip_uart.c
 
 # Extra compiler flags. F_CPU defines not really necessary.
 CONTIKI_PLAT_DEFS = -DF_CPU=16000000UL -DAUTO_CRC_PADDING=2
-
+# MCU for compiler
 MCU=atmega128rfa1
+# Bootsection start address (byte address!) for linker. Fuses are
+# set to the smallest bootsection (512 bytes) starting on 0xFE00
+# (word address)
+BOOTLOADER_START=0x1FC00
 
 # Avrdude settings
 AVRDUDE_PROGRAMMER=jtag3isp

@@ -129,11 +129,11 @@ SIGNATURE = {
 #endif
 
 /* LOW: Transceiver osc as CLK (16Mhz when prescaler 0x0), maximum start-up delay
- * HIGH: JTAG/OCD off, SPI on,  WatchDog override off (can be enabled at runtime), Bootsize 2k,
- * start bootsector at 1f800 (contiki default), save EEPROM on reflash, start at addr 0000
+ * HIGH: JTAG/OCD off, SPI on,  WatchDog override off (can be enabled at runtime), Bootsize 512b,
+ * start bootsector at 0xfe00 (word address!), save EEPROM on reflash, start at addr 0000
  * EXT: BrownOut at 1.9V
  * Last fuse fd -> f5 due to immutable bits */
-FUSES ={.low = 0xf7, .high = 0xd3, .extended = 0xf5,};
+FUSES ={.low = 0xf7, .high = 0xd7, .extended = 0xf5,};
 
 uint8_t
 rng_get_uint8(void) {
