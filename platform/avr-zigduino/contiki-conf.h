@@ -183,8 +183,14 @@ typedef unsigned short uip_stats_t;
 #define NETSTACK_CONF_RDC         sicslowmac_driver
 #define NETSTACK_CONF_FRAMER      framer_802154
 #define NETSTACK_CONF_RADIO       rf230_driver
-#define CHANNEL_802_15_4          11
-#define  EUI64_ADDRESS {0x02, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, 0x01}
+#ifndef CHANNEL
+#define CHANNEL 11
+#endif
+#define CHANNEL_802_15_4          CHANNEL
+#ifndef MAC
+#define MAC 0x01
+#endif
+#define  EUI64_ADDRESS {0x02, 0x00, 0x00, 0xff, 0xfe, 0x00, 0x00, MAC}
 /* AUTOACK receive mode gives better rssi measurements, even if ACK is never requested */
 #define RF230_CONF_AUTOACK        1
 /* Request 802.15.4 ACK on all packets sent (else autoretry). This is primarily for testing. */
