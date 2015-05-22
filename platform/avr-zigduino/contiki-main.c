@@ -132,8 +132,13 @@ SIGNATURE = {
  * HIGH: JTAG/OCD off, SPI on,  WatchDog override off (can be enabled at runtime), Bootsize 512b,
  * start bootsector at 0xfe00 (word address!), save EEPROM on reflash, start at addr 0000
  * EXT: BrownOut at 1.9V
- * Last fuse fd -> f5 due to immutable bits */
-FUSES ={.low = 0xf7, .high = 0xd7, .extended = 0xf5,};
+ * Last fuse fd -> f5 due to immutable bits, otherwise avrdude gives a
+ * verification error */
+FUSES = {
+  .low = FUSE_CKSEL3,
+  .high = (FUSE_SPIEN & FUSE_EESAVE),
+  .extended = (FUSE_BODLEVEL1 & ~_BV(3)), /* 128rfa1 has an unused extended fuse bit which is immutable */
+};
 
 uint8_t
 rng_get_uint8(void) {
