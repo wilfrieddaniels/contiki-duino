@@ -18,10 +18,9 @@ AVRDUDE_OPTIONS=-B 1
 # Include avr cpu + radio makefiles
 CONTIKIAVR=$(CONTIKI)/cpu/avr
 include $(CONTIKIAVR)/Makefile.avr
-#include $(CONTIKIAVR)/radio/Makefile.radio
 
 # Extra contiki libraries to include
-MODULES += core/net/mac core/net core/net/mac/sicslowmac core/net/mac/contikimac core/net/llsec
+#MODULES += core/net/mac core/net core/net/mac/sicslowmac core/net/mac/contikimac core/net/llsec
 
 %.fu: %.fuses.bin
 	$(eval LFUSE = $(shell od -A none --format=x1 --read-bytes=1 $<))

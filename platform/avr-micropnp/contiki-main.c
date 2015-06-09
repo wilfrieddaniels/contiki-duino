@@ -56,35 +56,11 @@
 #include "loader/symtab.h"
 
 #include "params.h"
-//#include "radio/rf230bb/rf230bb.h"
-#include "net/mac/frame802154.h"
-#include "net/mac/framer-802154.h"
-#include "net/ipv6/sicslowpan.h"
 
 #include "contiki.h"
-#include "contiki-net.h"
 #include "contiki-lib.h"
 
 #include "dev/rs232.h"
-#include "dev/serial-line.h"
-#include "dev/slip.h"
-
-#if AVR_WEBSERVER
-#include "httpd-fs.h"
-#include "httpd-cgi.h"
-#endif
-
-#ifdef COFFEE_FILES
-#include "cfs/cfs.h"
-#include "cfs/cfs-coffee.h"
-#endif
-
-#if UIP_CONF_ROUTER&&0
-#include "net/routing/rimeroute.h"
-#include "net/rime/rime-udp.h"
-#endif
-
-#include "net/rime/rime.h"
 
 /* Track interrupt flow through mac, rdc and radio driver */
 //#define DEBUGFLOWSIZE 32
@@ -100,7 +76,6 @@ uint8_t debugflowsize,debugflow[DEBUGFLOWSIZE];
 /* STAMPS will print ENERGEST outputs if that is enabled. */
 #define PERIODICPRINTS 1
 #if PERIODICPRINTS
-#define ROUTES 600
 #define STAMPS 60
 #define STACKMONITOR 1024
 uint32_t clocktime;
@@ -114,19 +89,8 @@ void rtimercycle(void) {rtimerflag=1;}
 
 /*-------------------------------------------------------------------------*/
 /*----------------------Configuration of the .elf file---------------------*/
-#if 1
 /* The proper way to set the signature is */
 #include <avr/signature.h>
-#else
-/* Older avr-gcc's may not define the needed SIGNATURE bytes. Do it manually if you get an error */
-typedef struct {const unsigned char B2;const unsigned char B1;const unsigned char B0;} __signature_t;
-#define SIGNATURE __signature_t __signature __attribute__((section (".signature")))
-SIGNATURE = {
-  .B2 = 0x01,//SIGNATURE_2, //ATMEGA128rfa1
-  .B1 = 0xA7,//SIGNATURE_1, //128KB flash
-  .B0 = 0x1E,//SIGNATURE_0, //Atmel
-};
-#endif
 
 /* External crystal osc as clock, maximum start-up delay. SPI and EESAVE
  * enabled, brownout on 2.7V */
@@ -141,12 +105,6 @@ FUSES = {
 
 uint8_t
 rng_get_uint8(void) {
-#if 0
-  /* Two RSSI reg bits (RND_VALUE) are random in rf231 
-   * To improve randomness, we should add a delay between the 4 readouts. */
-  uint8_t j;
-  j = PHY_RSSI_struct.rnd_value + (PHY_RSSI_struct.rnd_value<<2) + (PHY_RSSI_struct.rnd_value<<4) + (PHY_RSSI_struct.rnd_value<<8);
-#else
 /* Get a pseudo random number using the ADC */
   uint8_t i;
   uint8_t j = 0;
@@ -159,7 +117,6 @@ rng_get_uint8(void) {
 	j = (j<<2) + ADC;
   }
   ADCSRA=0;                   //Disable ADC
-#endif
   PRINTD("rng issues %d\n",j);
   return j;
 }
@@ -174,9 +131,9 @@ void initialize(void)
   watchdog_start();
 
   /* Generic or slip connection on uart0 (USB) */
-  rs232_init(RS232_PORT_0, USART_BAUD_57600, USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
+  rs232_init(RS232_PORT_1, USART_BAUD_57600, USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
   /* Redirect stdout */
-  rs232_redirect_stdout(RS232_PORT_0);
+  rs232_redirect_stdout(RS232_PORT_1);
 
   /* Second rs232 port for debugging or slip alternative */
   //rs232_init(RS232_PORT_1, USART_BAUD_57600,USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
@@ -195,191 +152,46 @@ void initialize(void)
    * loop. In conjuction with PERIODICPRINTS, never-used stack will be printed
    * every STACKMONITOR seconds.
    */
-{
-extern uint16_t __bss_end;
-uint16_t p=(uint16_t)&__bss_end;
+  {
+    extern uint16_t __bss_end;
+    uint16_t p = (uint16_t) &__bss_end;
     do {
       *(uint16_t *)p = 0x4242;
       p+=10;
-    } while (p<SP-10); //don't overwrite our own stack
-}
+    } while(p<SP-10); //don't overwrite our own stack
+  }
 #endif
-
-// By default, we use the non-calibrateable transceiver osc, not RC osc.
-// Also, this function performs calibration based on an external crystal,
-// which we typically do not have soldered.
-#define CONF_CALIBRATE_OSCCAL 0
-#if CONF_CALIBRATE_OSCCAL
-void calibrate_rc_osc_32k();
-{
-extern uint8_t osccal_calibrated;
-uint8_t i;
-  PRINTD("\nBefore calibration OSCCAL=%x\n",OSCCAL);
-  for (i=0;i<10;i++) { 
-    calibrate_rc_osc_32k();  
-    PRINTD("Calibrated=%x\n",osccal_calibrated);
-//#include <util/delay_basic.h>
-//#define delay_us( us )   ( _delay_loop_2(1+(us*F_CPU)/4000000UL) ) 
-//   delay_us(50000);
- }
-   clock_init();
-}
-#endif 
 
   PRINTA("\n*******Booting %s*******\n",CONTIKI_VERSION_STRING);
 
-/* rtimers needed for radio cycling */
+  /* Initialize rtimers */
   rtimer_init();
 
- /* Initialize process subsystem */
+  /* Initialize process subsystem */
   process_init();
 
   /* etimers must be started before ctimer_init */
   process_start(&etimer_process, NULL);
   ctimer_init();
 
-  /* Start radio and radio receive process */
-//  NETSTACK_RADIO.init();
-
-/* Get a random seed for the 802.15.4 packet sequence number.
- * Some layers will ignore duplicates found in a history (e.g. Contikimac)
- * causing the initial packets to be ignored after a short-cycle restart.
- */
+  /* Get a random seed for the 802.15.4 packet sequence number.
+   * Some layers will ignore duplicates found in a history (e.g. Contikimac)
+   * causing the initial packets to be ignored after a short-cycle restart.
+   */
   random_init(rng_get_uint8());
 
-  /* Set addresses BEFORE starting tcpip process */
-
-  linkaddr_t addr;
-  // Checks eeprom integrity, although we do not use a channel
-  params_get_channel();
-  if (params_get_eui64(addr.u8)) {
-      PRINTA("Random EUI64 address generated\n");
-  }
- 
-#if NETSTACK_CONF_WITH_IPV6 
-  memcpy(&uip_lladdr.addr, &addr.u8, sizeof(linkaddr_t));
-#endif  
-  linkaddr_set_node_addr(&addr); 
-
- // rf230_set_pan_addr(params_get_panid(),params_get_panaddr(),(uint8_t *)&addr.u8);
- // rf230_set_channel(params_get_channel());
- // rf230_set_txpower(params_get_txpower());
-
-#if NETSTACK_CONF_WITH_IPV6
-  PRINTA("EUI-64 MAC: %x-%x-%x-%x-%x-%x-%x-%x\n",addr.u8[0],addr.u8[1],addr.u8[2],addr.u8[3],addr.u8[4],addr.u8[5],addr.u8[6],addr.u8[7]);
-#else
-  PRINTA("MAC address ");
-  uint8_t i;
-  for (i=sizeof(linkaddr_t); i>0; i--){
-    PRINTA("%x:",addr.u8[i-1]);
-  }
-  PRINTA("\n");
-#endif
-
-  /* Initialize stack protocols */
-  queuebuf_init();
-  NETSTACK_RDC.init();
-  NETSTACK_MAC.init();
-  NETSTACK_NETWORK.init();
-
 #if ANNOUNCE_BOOT
-  PRINTA("Microduino boot\n");	  
-#if UIP_CONF_IPV6_RPL
-  PRINTA("RPL Enabled\n");
-#endif
-#if UIP_CONF_ROUTER
-  PRINTA("Routing Enabled\n");
-#endif
-
+  PRINTA("MicroPnP boot\n");	  
 #endif /* ANNOUNCE_BOOT */
-
-#if NETSTACK_CONF_WITH_IPV6 || NETSTACK_CONF_WITH_IPV4
-  process_start(&tcpip_process, NULL);
-#endif
 
   /* Autostart other processes */
   autostart_start(autostart_processes);
 
-  /*---If using coffee file system create initial web content if necessary---*/
-#if COFFEE_FILES
-  int fa = cfs_open( "/index.html", CFS_READ);
-  if (fa<0) {     //Make some default web content
-    PRINTA("No index.html file found, creating upload.html!\n");
-    PRINTA("Formatting FLASH file system for coffee...");
-    cfs_coffee_format();
-    PRINTA("Done!\n");
-    fa = cfs_open( "/index.html", CFS_WRITE);
-    int r = cfs_write(fa, &"It works!", 9);
-    if (r<0) PRINTA("Can''t create /index.html!\n");
-    cfs_close(fa);
-//  fa = cfs_open("upload.html"), CFW_WRITE);
-// <html><body><form action="upload.html" enctype="multipart/form-data" method="post"><input name="userfile" type="file" size="50" /><input value="Upload" type="submit" /></form></body></html>
-  }
-#endif /* COFFEE_FILES */
-
 /*--------------------------Announce the configuration---------------------*/
 #if ANNOUNCE_BOOT
-#if AVR_WEBSERVER
-{ uint8_t i;
-  char buf[80];
-  unsigned int size;
-
-  for (i=0;i<UIP_DS6_ADDR_NB;i++) {
-	if (uip_ds6_if.addr_list[i].isused) {	  
-	   httpd_cgi_sprint_ip6(uip_ds6_if.addr_list[i].ipaddr,buf);
-       PRINTA("IPv6 Address: %s\n",buf);
-	}
-  }
-   cli();
-   eeprom_read_block (buf,eemem_server_name, sizeof(eemem_server_name));
-   sei();
-   buf[sizeof(eemem_server_name)]=0;
-   PRINTA("%s",buf);
-   cli();
-   eeprom_read_block (buf,eemem_domain_name, sizeof(eemem_domain_name));
-   sei();
-   buf[sizeof(eemem_domain_name)]=0;
-   size=httpd_fs_get_size();
-#ifndef COFFEE_FILES
-   PRINTA(".%s online with fixed %u byte web content\n",buf,size);
-#elif COFFEE_FILES==1
-   PRINTA(".%s online with static %u byte EEPROM file system\n",buf,size);
-#elif COFFEE_FILES==2
-   PRINTA(".%s online with dynamic %u KB EEPROM file system\n",buf,size>>10);
-#elif COFFEE_FILES==3
-   PRINTA(".%s online with static %u byte program memory file system\n",buf,size);
-#elif COFFEE_FILES==4
-   PRINTA(".%s online with dynamic %u KB program memory file system\n",buf,size>>10);
-#endif /* COFFEE_FILES */
-}
-#else
    PRINTA("Online\n");
-#endif
 #endif /* ANNOUNCE_BOOT */
-
 }
-
-#if ROUTES && NETSTACK_CONF_WITH_IPV6
-static void
-ipaddr_add(const uip_ipaddr_t *addr)
-{
-  uint16_t a;
-  int8_t i, f;
-  for(i = 0, f = 0; i < sizeof(uip_ipaddr_t); i += 2) {
-    a = (addr->u8[i] << 8) + addr->u8[i + 1];
-    if(a == 0 && f >= 0) {
-      if(f++ == 0) PRINTF("::");
-    } else {
-      if(f > 0) {
-        f = -1;
-      } else if(i > 0) {
-        PRINTF(":");
-      }
-      PRINTF("%x",a);
-    }
-  }
-}
-#endif
 
 /*-------------------------------------------------------------------------*/
 /*------------------------- Main Scheduler loop----------------------------*/
@@ -387,158 +199,65 @@ ipaddr_add(const uip_ipaddr_t *addr)
 int
 main(void)
 {
-#if NETSTACK_CONF_WITH_IPV6
-  uip_ds6_nbr_t *nbr;
-#endif /* NETSTACK_CONF_WITH_IPV6 */
   initialize();
 
   while(1) {
     process_run();
     watchdog_periodic();
 
-#if 0
-/* Various entry points for debugging in the AVR Studio simulator.
- * Set as next statement and step into the routine.
- */
-    NETSTACK_RADIO.send(packetbuf_hdrptr(), 42);
-    process_poll(&rf230_process);
-    packetbuf_clear();
-    len = rf230_read(packetbuf_dataptr(), PACKETBUF_SIZE);
-    packetbuf_set_datalen(42);
-    NETSTACK_RDC.input();
-#endif
-
-#if 0
-/* Clock.c can trigger a periodic PLL calibration in the RF230BB driver.
- * This can show when that happens.
- */
-    extern uint8_t rf230_calibrated;
-    if (rf230_calibrated) {
-      PRINTD("\nRF230 calibrated!\n");
-      rf230_calibrated=0;
-    }
-#endif
-
-/* Set DEBUGFLOWSIZE in contiki-conf.h to track path through MAC, RDC, and RADIO */
+    /* Set DEBUGFLOWSIZE in contiki-conf.h to track path through MAC, RDC, and RADIO */
 #if DEBUGFLOWSIZE
-  if (debugflowsize) {
-    debugflow[debugflowsize]=0;
-    PRINTF("%s",debugflow);
-    debugflowsize=0;
-   }
+    if (debugflowsize) {
+      debugflow[debugflowsize]=0;
+      PRINTF("%s",debugflow);
+      debugflowsize=0;
+    }
 #endif
 
 #if PERIODICPRINTS
 #if TESTRTIMER
-/* Timeout can be increased up to 8 seconds maximum.
- * A one second cycle is convenient for triggering the various debug printouts.
- * The triggers are staggered to avoid printing everything at once.
- */
+    /* Timeout can be increased up to 8 seconds maximum.
+     * A one second cycle is convenient for triggering the various debug printouts.
+     * The triggers are staggered to avoid printing everything at once.
+     */
     if (rtimerflag) {
       rtimer_set(&rt, RTIMER_NOW()+ RTIMER_ARCH_SECOND*1UL, 1,(void *) rtimercycle, NULL);
       rtimerflag=0;
 #else
-  if (clocktime!=clock_seconds()) {
-     clocktime=clock_seconds();
+    if (clocktime!=clock_seconds()) {
+      clocktime=clock_seconds();
 #endif
 
 #if STAMPS
-if ((clocktime%STAMPS)==0) {
+      if ((clocktime%STAMPS)==0) {
 #if ENERGEST_CONF_ON
-#include "lib/print-stats.h"
-	print_stats();
-#elif RADIOSTATS
-extern volatile unsigned long radioontime;
-  PRINTF("%u(%u)s\n",clocktime,radioontime);
+        #include "lib/print-stats.h"
+	    print_stats();
 #else
-  PRINTF("%us\n",clocktime);
+        PRINTF("%us\n",clocktime);
 #endif
 
-}
+      }
 #endif
 #if TESTRTIMER
       clocktime+=1;
 #endif
 
-#if ROUTES && NETSTACK_CONF_WITH_IPV6
-if ((clocktime%ROUTES)==2) {
-      
-extern uip_ds6_netif_t uip_ds6_if;
-
-  uint8_t i,j;
-  PRINTF("\nAddresses [%u max]\n",UIP_DS6_ADDR_NB);
-  for (i=0;i<UIP_DS6_ADDR_NB;i++) {
-    if (uip_ds6_if.addr_list[i].isused) {
-      ipaddr_add(&uip_ds6_if.addr_list[i].ipaddr);
-      PRINTF("\n");
-    }
-  }
-
-  PRINTF("\nNeighbors [%u max]\n",NBR_TABLE_MAX_NEIGHBORS);
-  j = 1;
-  for(nbr = nbr_table_head(ds6_neighbors);
-      nbr != NULL;
-      nbr = nbr_table_next(ds6_neighbors, nbr)) {
-    ipaddr_add(&nbr->ipaddr);
-    PRINTF("\n");
-    j=0;
-  }
-  if (j) PRINTF("  <none>\n");
-
-  {
-    uip_ds6_route_t *r;
-    PRINTF("\nRoutes [%u max]\n",UIP_DS6_ROUTE_NB);
-    j = 1;
-    for(r = uip_ds6_route_head();
-        r != NULL;
-        r = uip_ds6_route_next(r)) {
-      ipaddr_add(&r->ipaddr);
-      PRINTF("/%u (via ", r->length);
-      ipaddr_add(uip_ds6_route_nexthop(r));
-      PRINTF(") %lus\n", r->state.lifetime);
-      j = 0;
-    }
-    if (j) PRINTF("  <none>\n");
-  }
-  PRINTF("\n---------\n");
-}
-#endif
-
 #if STACKMONITOR
-if ((clocktime%STACKMONITOR)==3) {
-  extern uint16_t __bss_end;
-  uint16_t p=(uint16_t)&__bss_end;
-  do {
-    if (*(uint16_t *)p != 0x4242) {
-      PRINTF("Never-used stack > %d bytes\n",p-(uint16_t)&__bss_end);
-      break;
-    }
-    p+=10;
-  } while (p<RAMEND-10);
-}
+      if ((clocktime%STACKMONITOR)==3) {
+        extern uint16_t __bss_end;
+        uint16_t p=(uint16_t)&__bss_end;
+        do {
+          if(*(uint16_t *)p != 0x4242) {
+            PRINTF("Never-used stack > %d bytes\n",p-(uint16_t)&__bss_end);
+            break;
+          }
+          p+=10;
+        } while (p<RAMEND-10);
+      }
 #endif
-
     }
 #endif /* PERIODICPRINTS */
-
-#if RF230BB&&0
-extern uint8_t rf230processflag;
-    if (rf230processflag) {
-      PRINTF("rf230p%d",rf230processflag);
-      rf230processflag=0;
-    }
-#endif
-
-#if RF230BB&&0
-extern uint8_t rf230_interrupt_flag;
-    if (rf230_interrupt_flag) {
- //   if (rf230_interrupt_flag!=11) {
-        PRINTF("**RI%u",rf230_interrupt_flag);
- //   }
-      rf230_interrupt_flag=0;
-    }
-#endif
-  
   }
   return 0;
 }

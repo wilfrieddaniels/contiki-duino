@@ -82,7 +82,7 @@ void clock_adjust_ticks(clock_time_t howmany);
 /*---------------------------------------------------------------------------*/
 
 /* COM port to be used for SLIP connection. This is usually UART0 (USB) */
-#define SLIP_PORT RS232_PORT_0
+#define SLIP_PORT RS232_PORT_1
 
 /* Pre-allocated memory for MMEM (in bytes) */
 /* Default is 4096. */
