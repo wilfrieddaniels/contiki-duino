@@ -86,6 +86,21 @@
 #define USART_BAUD_230400 1
 #define USART_BAUD_250000 1
 #define USART_BAUD_500000 0
+#elif (F_CPU == 10000000UL)
+/* Single speed operation (U2X = 0)*/
+#define USART_BAUD_2400 259
+#define USART_BAUD_4800 129
+#define USART_BAUD_9600 64
+#define USART_BAUD_14400 42
+#define USART_BAUD_19200 32
+#define USART_BAUD_28800 21
+#define USART_BAUD_38400 15
+#define USART_BAUD_57600 10
+#define USART_BAUD_76800 7
+#define USART_BAUD_115200 4
+#define USART_BAUD_230400 2
+#define USART_BAUD_250000 2
+#define USART_BAUD_500000 0
 #elif F_CPU == 0x800000UL
 /* 8192 KHz with external 32768 crystal */
 #define USART_BAUD_38400 12

@@ -45,7 +45,7 @@
 #define PLATFORM_NAME  "MicroPnP"
 #define PLATFORM_TYPE  ATMEGA128RFA1 //Not correct, change later
 #ifndef F_CPU
-#define F_CPU          8000000UL
+#define F_CPU          10000000UL
 #endif
 
 #include <stdint.h>
