@@ -274,6 +274,7 @@ rs232_init (uint8_t port, uint8_t bd, uint8_t ffmt)
  if (port == 0) {
    D_UBRR0H = (uint8_t)(bd>>8);
    D_UBRR0L = (uint8_t)bd;
+   D_UCSR0A = _BV(U2X0);
 #if RS232_TX_INTERRUPTS
    txwait_0 = 0;
    D_UCSR0B =  USART_INTERRUPT_RX_COMPLETE | USART_INTERRUPT_TX_COMPLETE | \
