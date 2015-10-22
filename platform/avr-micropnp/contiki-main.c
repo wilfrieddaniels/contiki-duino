@@ -71,6 +71,11 @@ uint8_t debugflowsize,debugflow[DEBUGFLOWSIZE];
 #define DEBUGFLOW(c)
 #endif
 
+/* Conditionally disable rtimer. Contiki rtimer is normally only used by the
+ * radio/mac layer implementation. MicrPnP doesn't have a radio, so this option
+ * can free up another timer. */
+#define RTIMER_DISABLE 1
+
 /* Get periodic prints from idle loop, from clock seconds or rtimer interrupts */
 /* Use of rtimer will conflict with other rtimer interrupts such as contikimac radio cycling */
 /* STAMPS will print ENERGEST outputs if that is enabled. */
@@ -164,8 +169,10 @@ void initialize(void)
 
   PRINTA("\n*******Booting %s*******\n",CONTIKI_VERSION_STRING);
 
+#if !RTIMER_DISABLE
   /* Initialize rtimers */
   rtimer_init();
+#endif
 
   /* Initialize process subsystem */
   process_init();
