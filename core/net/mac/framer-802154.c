@@ -242,8 +242,10 @@ parse(void)
     }
     packetbuf_set_addr(PACKETBUF_ADDR_SENDER, (linkaddr_t *)&frame.src_addr);
     packetbuf_set_attr(PACKETBUF_ATTR_PENDING, frame.fcf.frame_pending);
-    /*    packetbuf_set_attr(PACKETBUF_ATTR_RELIABLE, frame.fcf.ack_required);*/
+    packetbuf_set_attr(PACKETBUF_ATTR_MAC_SEQNO, frame.seq);
+#if NETSTACK_CONF_WITH_RIME
     packetbuf_set_attr(PACKETBUF_ATTR_PACKET_ID, frame.seq);
+#endif
     
 #if LLSEC802154_SECURITY_LEVEL
     if(frame.fcf.security_enabled) {
@@ -271,7 +273,6 @@ parse(void)
 const struct framer framer_802154 = {
   hdr_length,
   create,
-  framer_canonical_create_and_secure,
   parse
 };
 /*---------------------------------------------------------------------------*/

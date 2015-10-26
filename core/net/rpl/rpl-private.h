@@ -284,6 +284,7 @@ rpl_dag_t *rpl_alloc_dag(uint8_t, uip_ipaddr_t *);
 rpl_instance_t *rpl_alloc_instance(uint8_t);
 void rpl_free_dag(rpl_dag_t *);
 void rpl_free_instance(rpl_instance_t *);
+void rpl_purge_dags(void);
 
 /* DAG parent management function. */
 rpl_parent_t *rpl_add_parent(rpl_dag_t *, rpl_dio_t *dio, uip_ipaddr_t *);
@@ -303,9 +304,6 @@ uip_ds6_route_t *rpl_add_route(rpl_dag_t *dag, uip_ipaddr_t *prefix,
                                int prefix_len, uip_ipaddr_t *next_hop);
 void rpl_purge_routes(void);
 
-/* Lock a parent in the neighbor cache. */
-void rpl_lock_parent(rpl_parent_t *p);
-
 /* Objective function. */
 rpl_of_t *rpl_find_of(rpl_ocp_t);
 
@@ -313,11 +311,15 @@ rpl_of_t *rpl_find_of(rpl_ocp_t);
 void rpl_schedule_dao(rpl_instance_t *);
 void rpl_schedule_dao_immediately(rpl_instance_t *);
 void rpl_cancel_dao(rpl_instance_t *instance);
+void rpl_schedule_probing(rpl_instance_t *instance);
 
 void rpl_reset_dio_timer(rpl_instance_t *);
 void rpl_reset_periodic_timer(void);
 
 /* Route poisoning. */
 void rpl_poison_routes(rpl_dag_t *, rpl_parent_t *);
+
+
+rpl_instance_t *rpl_get_default_instance(void);
 
 #endif /* RPL_PRIVATE_H */
