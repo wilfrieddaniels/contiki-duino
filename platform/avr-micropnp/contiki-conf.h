@@ -57,7 +57,7 @@
 
 /* Clock ticks per second. This will automatically set up timer
  * prescalers/treshold values to give this amount of ticks per second */
-#define CLOCK_CONF_SECOND 128
+#define CLOCK_CONF_SECOND 2
 
 /* Declare contiki timer size. A short gives ~10 min before overflow. Change if
  * necessary*/

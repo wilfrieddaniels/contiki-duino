@@ -48,6 +48,9 @@
 #include <avr/pgmspace.h>
 #include <avr/fuse.h>
 #include <avr/eeprom.h>
+#include <avr/sleep.h>
+#include <avr/io.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <dev/watchdog.h>
@@ -132,8 +135,8 @@ void initialize(void)
 {
   uint8_t mcusr_backup = MCUSR;
   MCUSR = 0;
-  watchdog_init();
-  watchdog_start();
+//  watchdog_init();
+//  watchdog_start();
 
   /* Generic or slip connection on uart0 (USB) */
   rs232_init(RS232_PORT_1, USART_BAUD_57600, USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
@@ -206,11 +209,12 @@ void initialize(void)
 int
 main(void)
 {
+  uint8_t ps_scheduled;
   initialize();
 
   while(1) {
-    process_run();
-    watchdog_periodic();
+    ps_scheduled = process_run();
+    //watchdog_periodic();
 
     /* Set DEBUGFLOWSIZE in contiki-conf.h to track path through MAC, RDC, and RADIO */
 #if DEBUGFLOWSIZE
@@ -265,6 +269,17 @@ main(void)
 #endif
     }
 #endif /* PERIODICPRINTS */
+    
+    if(!ps_scheduled) {
+      while(! (UCSR1A & _BV(TXC1)) );
+      set_sleep_mode(SLEEP_MODE_PWR_DOWN);
+      cli();
+      sleep_enable();
+      sleep_bod_disable();
+      sei();
+      sleep_cpu();
+      sleep_disable();
+    }
   }
   return 0;
 }

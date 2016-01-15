@@ -48,9 +48,15 @@ AUTOSTART_PROCESSES(&hello_world_process);
 PROCESS_THREAD(hello_world_process, ev, data)
 {
     PROCESS_BEGIN();
+    static struct etimer et;
     PROCESS_PAUSE();
 
-    printf("Hello, world\n");
+    etimer_set(&et, CLOCK_SECOND);
+    while(1) {
+        PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
+        printf("Hello, world\n");
+        etimer_reset(&et);
+    }
 
     PROCESS_END();
 }
