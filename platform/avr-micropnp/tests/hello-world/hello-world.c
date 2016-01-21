@@ -51,7 +51,7 @@ PROCESS_THREAD(hello_world_process, ev, data)
     static struct etimer et;
     PROCESS_PAUSE();
 
-    etimer_set(&et, CLOCK_SECOND);
+    etimer_set(&et, 5*CLOCK_SECOND);
     while(1) {
         PROCESS_WAIT_EVENT_UNTIL(etimer_expired(&et));
         printf("Hello, world\n");

@@ -1,7 +1,7 @@
 # Only required when these subdirs exist in platform directory
 #CONTIKI_TARGET_DIRS = . apps net loader
 
-CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c
+CONTIKI_TARGET_SOURCEFILES += contiki-main.c params.c pm.c
 # Needed for slip
 CONTIKI_TARGET_SOURCEFILES += slip_uart.c
 
@@ -15,7 +15,7 @@ MCU=atmega1284p
 BOOTLOADER_START=0x1FC00
 
 # Avrdude settings
-AVRDUDE_PROGRAMMER=jtag3isp
+AVRDUDE_PROGRAMMER=atmelice_isp
 AVRDUDE_MCU=m1284p
 AVRDUDE_OPTIONS=-B 1
 

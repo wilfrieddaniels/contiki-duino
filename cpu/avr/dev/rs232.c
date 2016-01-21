@@ -351,11 +351,12 @@ rs232_send(uint8_t port, unsigned char c)
 #if NUMPORTS > 0
   if (port == 0 ) {
     while (!(D_UCSR0A & D_UDRE0M));
+    UCSR0A |= _BV(TXC0);
     D_UDR0 = c;
 #if NUMPORTS > 1
   } else if (port == 1) {
     while (!(D_UCSR1A & D_UDRE1M));
-    UCSR1A &= _BV(TXC1);
+    UCSR1A |= _BV(TXC1);
     D_UDR1 = c;
 #if NUMPORTS > 2
   } else if (port == 2) {

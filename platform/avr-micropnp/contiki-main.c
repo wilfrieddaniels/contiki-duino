@@ -48,17 +48,15 @@
 #include <avr/pgmspace.h>
 #include <avr/fuse.h>
 #include <avr/eeprom.h>
-#include <avr/sleep.h>
-#include <avr/io.h>
 
 #include <stdio.h>
 #include <string.h>
-#include <dev/watchdog.h>
 
 #include "loader/symbols-def.h"
 #include "loader/symtab.h"
 
 #include "params.h"
+#include "pm.h"
 
 #include "contiki.h"
 #include "contiki-lib.h"
@@ -78,6 +76,16 @@ uint8_t debugflowsize,debugflow[DEBUGFLOWSIZE];
  * radio/mac layer implementation. MicrPnP doesn't have a radio, so this option
  * can free up another timer. */
 #define RTIMER_DISABLE 1
+
+#define WDT_DISABLE 1
+#if !WDT_DISABLE
+#include <dev/watchdog.h>
+#endif
+
+#define SLEEP_DISABLE 0
+#if !SLEEP_DISABLE
+#include "pm.h"
+#endif
 
 /* Get periodic prints from idle loop, from clock seconds or rtimer interrupts */
 /* Use of rtimer will conflict with other rtimer interrupts such as contikimac radio cycling */
@@ -102,9 +110,9 @@ void rtimercycle(void) {rtimerflag=1;}
 
 /* External crystal osc as clock, maximum start-up delay. SPI and EESAVE
  * enabled, brownout on 2.7V */
-//FUSES ={.low = 0xff, .high = 0xd7, .extended = 0xfd,};
+//FUSES ={.low = 0xde, .high = 0xd7, .extended = 0xfd,};
 FUSES = {
-  .low = 0xff, // Nothing programmed
+  .low = (FUSE_SUT1 & FUSE_CKSEL0),
   .high = (FUSE_SPIEN & FUSE_EESAVE),
   .extended = (FUSE_BODLEVEL1),
 };
@@ -135,8 +143,11 @@ void initialize(void)
 {
   uint8_t mcusr_backup = MCUSR;
   MCUSR = 0;
-//  watchdog_init();
-//  watchdog_start();
+
+#if !WDT_DISABLE
+  watchdog_init();
+  watchdog_start();
+#endif
 
   /* Generic or slip connection on uart0 (USB) */
   rs232_init(RS232_PORT_1, USART_BAUD_57600, USART_PARITY_NONE | USART_STOP_BITS_1 | USART_DATA_BITS_8);
@@ -214,7 +225,9 @@ main(void)
 
   while(1) {
     ps_scheduled = process_run();
-    //watchdog_periodic();
+#if !WDT_DISABLE
+    watchdog_periodic();
+#endif
 
     /* Set DEBUGFLOWSIZE in contiki-conf.h to track path through MAC, RDC, and RADIO */
 #if DEBUGFLOWSIZE
@@ -270,16 +283,13 @@ main(void)
     }
 #endif /* PERIODICPRINTS */
     
-    if(!ps_scheduled) {
-      while(! (UCSR1A & _BV(TXC1)) );
-      set_sleep_mode(SLEEP_MODE_PWR_DOWN);
-      cli();
-      sleep_enable();
-      sleep_bod_disable();
-      sei();
-      sleep_cpu();
-      sleep_disable();
+#if !SLEEP_DISABLE
+    /* Sleep MCU if no more tasks scheduled */
+    if(!ps_scheduled && pm_io_done()) {
+      pm_sleep();
     }
+#endif
+
   }
   return 0;
 }
